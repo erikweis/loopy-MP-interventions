@@ -52,22 +52,22 @@ class NeighborhoodMessagePassing:
     Args:
         g (nx.Graph): The graph on which to perform message passing.
         r (int): Hyperparameter specifying the size of the neighborhood.
-        infection_rate (float): The probability of an edge being retained in the 
+        infection_prob (float): The probability of an edge being retained in the 
             independent cascade (IC) model, which is a global value $p = p_{ij}$ 
             for all edges.
         t_max (int): The maximum number of iterations to run the message passing algorithm.
         v (np.array): The vaccination status of each node, $v_i = 1$ if node i is vaccinated.
-        T (int): The number of samples to draw from each neighborhood for the marginal calculations.
+        M (int): The number of samples to draw from each neighborhood for the marginal calculations.
         verbose (bool): Whether to print progress information.
     """
 
-    def __init__(self, g, r, infection_rate, t_max, 
-                 v = None, T=10, verbose = False, temporal = False):
+    def __init__(self, g, r, infection_prob, t_max, 
+                 v = None, M=10, verbose = False, temporal = False):
         
         # basic configs
         self.verbose = verbose
         self.temporal = temporal
-        self.infection_rate = infection_rate
+        self.infection_prob = infection_prob
         self.t_max = t_max
 
         # save graph information
@@ -92,8 +92,8 @@ class NeighborhoodMessagePassing:
         self.construct_neighborhoods_i_except_j()
 
         # sample neighborhoods
-        self.sample_neighborhoods(T)
-        self.sample_neighborhoods_i_except_j(T)
+        self.sample_neighborhoods(M)
+        self.sample_neighborhoods_i_except_j(M)
 
         # initialize state
         self.state = self.empty_state(100)
@@ -120,14 +120,14 @@ class NeighborhoodMessagePassing:
                     filter_r0_edges=(not self.temporal)
                 )
 
-    def sample_neighborhoods(self, T):
+    def sample_neighborhoods(self, M):
         if self.verbose:
             print("Sampling neighborhoods for marginal calculations.")
         iter_ = tqdm(range(self.N)) if self.verbose else range(self.N)
         for i in iter_:
-            sample_gamma(self.neighborhoods[i], T, self.infection_rate, v = self.v, temporal = self.temporal)
+            sample_gamma(self.neighborhoods[i], M, self.infection_prob, v = self.v, temporal = self.temporal)
 
-    def sample_neighborhoods_i_except_j(self, T):
+    def sample_neighborhoods_i_except_j(self, M):
 
         if self.verbose:
             print("Sampling neighborhoods for N_i excluding N_j.")
@@ -135,7 +135,7 @@ class NeighborhoodMessagePassing:
         for i in iter_:
             for k in self.neighborhoods_i_except_j[i].keys():
                 #assert isinstance(self.neighborhoods_i_except_j[i][k], Neighborhood)
-                sample_gamma(self.neighborhoods_i_except_j[i][k], T, self.infection_rate, v = self.v, temporal = self.temporal)
+                sample_gamma(self.neighborhoods_i_except_j[i][k], M, self.infection_prob, v = self.v, temporal = self.temporal)
 
 
     def empty_state(self, size):
@@ -205,7 +205,7 @@ class NeighborhoodMessagePassing:
                 # compute pi_i(t)
                 for sample in nb_i.Gamma_samples:
                     marginals[i,t] += _prob_i_infected_given_gamma(
-                        self.state, i, t, self.infection_rate, sample, s, temporal = self.temporal
+                        self.state, i, t, self.infection_prob, sample, s, temporal = self.temporal
                     ) * sample.prob
                 marginals[i, t] = (s[i] + (1 - s[i]) * (marginals[i, t]))
                 # if track_vaccinated, marginals for vaccinated nodes are not set to zero
@@ -222,7 +222,7 @@ class NeighborhoodMessagePassing:
 
         ###### initialization ######
         # assert 
-        assert 0 <= self.infection_rate <= 1.0
+        assert 0 <= self.infection_prob <= 1.0
         # reset state
         self.reset_state()
         for i in self.state.keys():
@@ -244,7 +244,7 @@ class NeighborhoodMessagePassing:
                     nb_i_j = self.neighborhoods_i_except_j[i][j]
                     # compute state[i][j[t]
                     self.state[i][j][t] = _calculate_conditional_marginal(
-                        self.state, i, j, nb_i_j, t, s, v, self.infection_rate, temporal = self.temporal, track_vaccinated=track_vaccinated
+                        self.state, i, j, nb_i_j, t, s, v, self.infection_prob, temporal = self.temporal, track_vaccinated=track_vaccinated
                     )
             
             # check for convergence and, if so, compute marginals
@@ -256,7 +256,7 @@ class NeighborhoodMessagePassing:
         raise RuntimeError(f"Message passing did not converge in {self.t_max} time steps.")
 
 
-def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_rate, temporal = False, track_vaccinated = False):
+def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_prob, temporal = False, track_vaccinated = False):
     
     """Compute the conditional marginal pi_i\j(t) for node i from precomputed neighborhood samples."""
 
@@ -264,7 +264,7 @@ def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_rate
     prob_i_infected = 0
     for sample in nb_i_j.Gamma_samples:
         prob_i_infected += _prob_i_infected_given_gamma(
-            state, i, t, infection_rate, sample, s, temporal = temporal
+            state, i, t, infection_prob, sample, s, temporal = temporal
         ) * sample.prob
     # add seed status to the conditional marginal
     prob_i_infected = s[i] + (1 - s[i]) * prob_i_infected

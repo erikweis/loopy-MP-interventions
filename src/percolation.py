@@ -51,7 +51,7 @@ class NeighborhoodObservable():
     connected through $i$.
     """
 
-    def __init__(self, i, neighbors_i, nodes, edgelist, infection_rate, v=None):
+    def __init__(self, i, neighbors_i, nodes, edgelist, infection_prob, v=None):
         
         self.i = i 
         #remove i from nodes
@@ -73,7 +73,7 @@ class NeighborhoodObservable():
         self.neighbors_i = neighbors_i
         
         self.samples = []
-        self.infection_rate = infection_rate
+        self.infection_prob = infection_prob
 
     def __repr__(self):
         return f"""NeighborhoodObservable(
@@ -81,7 +81,7 @@ class NeighborhoodObservable():
     neighbors_i={self.neighbors_i}, 
     nodes={self.node_map}, 
     edgelist={self.edgelist}, 
-    infection_rate={self.infection_rate})"""
+    infection_prob={self.infection_prob})"""
 
 
 
@@ -100,7 +100,7 @@ def calculate_observables(m, NO, x):
     node_map = NO.node_map
     
     # calcualte probability of percolation outcome
-    prob = binom.pmf(m, len(NO.edgelist), NO.infection_rate)
+    prob = binom.pmf(m, len(NO.edgelist), NO.infection_prob)
     if prob == 0:
         return
     

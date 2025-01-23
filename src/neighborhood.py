@@ -98,7 +98,7 @@ class Neighborhood:
         return list(reachable_nodes), reachable_edges
 
 
-def sample_gamma(nb, T, infection_rate, v = None, force=False, temporal = False):
+def sample_gamma(nb, M, infection_prob, v = None, force=False, temporal = False):
 
     """Sample the neighborhood of a node i with a percolation process.
     
@@ -106,9 +106,9 @@ def sample_gamma(nb, T, infection_rate, v = None, force=False, temporal = False)
     ----------
     nb : Neighborhood
         The neighborhood object to sample.
-    T : int
+    M : int
         The number of Monte Carlo steps to perform.
-    infection_rate : float
+    infection_prob : float
         The probability an edge is kept in the percolation process.
     v : list, optional
         The vaccination status of each node in the graph.
@@ -123,7 +123,7 @@ def sample_gamma(nb, T, infection_rate, v = None, force=False, temporal = False)
         nb.Gamma_samples = []
 
     if temporal: # if using temporal, sample with SIR process
-        _sample_neighborhood_temporal(nb, T, infection_rate, v = v)
+        _sample_neighborhood_temporal(nb, M, infection_prob, v = v)
         return
 
     else: # sample using atemporal Newman-Ziff algorithm
@@ -131,21 +131,21 @@ def sample_gamma(nb, T, infection_rate, v = None, force=False, temporal = False)
         # if the neighborhood has no edges, then only one percolation outcome is possible
         if len(nb.edges) == 0:
             #add null sample if it's probability is nonzero
-            if infection_rate > 0:
-                s = _get_null_sample(nb, infection_rate, temporal = temporal)
+            if infection_prob > 0:
+                s = _get_null_sample(nb, infection_prob, temporal = temporal)
                 nb.Gamma_samples.append(s)
             return # up to one sample added
 
         # sample the neighborhood
-        _sample_neighborhood_newman_ziff(nb, T, infection_rate, v = v)
+        _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = v)
 
         # add sample for the case where no edges appear in percolation process
-        if infection_rate > 0:
-            s = _get_null_sample(nb, infection_rate, temporal = temporal)
+        if infection_prob > 0:
+            s = _get_null_sample(nb, infection_prob, temporal = temporal)
             nb.Gamma_samples.append(s)
 
 
-def _sample_neighborhood_temporal(nb, T, infection_rate, v = None):
+def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
 
     """"Perform monte carlo sampling of the neighborhood percolation process
     using discrete-time SIR dynamics.
@@ -159,10 +159,10 @@ def _sample_neighborhood_temporal(nb, T, infection_rate, v = None):
     if len(g) == 0:
         return
     
-    # run the SIR process for T iterations
+    # run the SIR process for M iterations
     seeds = [nb.i]
-    for _ in range(T):
-        I = simulate_discrete_SI_temporal(g, infection_rate, seeds, t_max = 20)
+    for _ in range(M):
+        I = simulate_discrete_SI_temporal(g, infection_prob, seeds, t_max = 20)
         
         reachable_nodes, distances = [],[]
         for node, distance in I.items():
@@ -173,7 +173,7 @@ def _sample_neighborhood_temporal(nb, T, infection_rate, v = None):
         s = TemporalGammaSample(
             reachable_nodes,
             distances,
-            prob = 1/T
+            prob = 1/M
         )
         nb.Gamma_samples.append(s)
 
@@ -181,13 +181,13 @@ def _sample_neighborhood_temporal(nb, T, infection_rate, v = None):
     nb.Gamma_samples = consolidate_samples(nb.Gamma_samples)
 
 
-def _sample_neighborhood_newman_ziff(nb, T, infection_rate, v = None):
+def _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = None):
 
     """"Perform monte carlo sampling of the neighborhood percolation process
     using the Newman-Ziff algorithm."""
     
     # create a neighborhood observable object to store the outcomes of the process
-    NO = NeighborhoodObservable(nb.i, nb.neighbors_i, nb.nodes, nb.edges, infection_rate, v=v)
+    NO = NeighborhoodObservable(nb.i, nb.neighbors_i, nb.nodes, nb.edges, infection_prob, v=v)
     
     # create a union-find structure for Newman-Ziff
     x = np.zeros(
@@ -198,18 +198,18 @@ def _sample_neighborhood_newman_ziff(nb, T, infection_rate, v = None):
     m_max = len(NO.edgelist)
 
     # perform percolation sampling
-    for _ in range(T):
+    for _ in range(M):
         percolation_MC(NO.edgelist, x, NO, m_max)
     
     # add samples with appreciable probability to the sample list
     nb.Gamma_samples = consolidate_samples(NO.samples)
 
-    # adjust probabilities to account for the number of samples, T
+    # adjust probabilities to account for the number of samples, M
     for sample in nb.Gamma_samples:
-        sample.prob = sample.prob / T
+        sample.prob = sample.prob / M
 
 
-def _get_null_sample(nb, infection_rate, temporal = False):
+def _get_null_sample(nb, infection_prob, temporal = False):
 
     """"Return a GammaSample object, where no edges were retained
     in the percolation process."""
@@ -218,15 +218,8 @@ def _get_null_sample(nb, infection_rate, temporal = False):
     return GammaSample(
             [[k] for k in nb.neighbors_i],
             [1]*len(nb.neighbors_i),
-            prob = binom.pmf(0,len(nb.edges),infection_rate)
+            prob = binom.pmf(0,len(nb.edges),infection_prob)
         )
-    # if temporal:
-    #     return TemporalGammaSample(
-    #         [k for k in nb.neighbors_i],
-    #         [1]*len(nb.neighbors_i),
-    #         prob = 1
-    #     )
-    # else:
         
 
 def consolidate_samples(samples, min_prob_threshold = 10**-10):
