@@ -141,7 +141,7 @@ class NeighborhoodMessagePassing:
     def empty_state(self, size):
 
         """Create a dictionary of dictionaries to store
-        the temporal state of the conditional marginals, pi_i\j(t).
+        the temporal state of the conditional marginals, pi_{i/j}(t).
         The initial size is arbitrary, but can be extended
         with the extend_state method.
 
@@ -173,7 +173,7 @@ class NeighborhoodMessagePassing:
     def convergence_check(self, t, threshold=1e-4):
 
         """Check if message passing has converged, which happens if
-        $\pi_{i\j}(t) - \pi_{i\j}(t-1) < \text{threshold}$ for all i, j.
+        pi_{i/j}(t) - pi_{i/j}(t-1) < threshold for all i, j.
         """
 
         for i in self.state.keys():
@@ -184,7 +184,7 @@ class NeighborhoodMessagePassing:
 
     def reset_state(self):
 
-        """Reset the state, such that $\pi_{i\j}(t)=0$ for all $i,j,t$."""
+        """Reset the state, such that pi_{i/j}(t)=0 for all i,j,t."""
 
         for i in self.state.keys():
             for j in self.state[i].keys():
@@ -192,7 +192,7 @@ class NeighborhoodMessagePassing:
 
     def compute_marginals(self, s, convergence_time, track_vaccinated = False):
         
-        """Compute the marginals $\pi_i(t)$ for all nodes i at time t."""
+        """Compute the marginals pi_i(t) for all nodes i at time t."""
 
         # initialize marginals
         marginals = np.zeros((self.N, convergence_time+1))
@@ -217,7 +217,7 @@ class NeighborhoodMessagePassing:
 
     def neighborhood_message_passing(self, s, convergence_threshold=1e-6, track_vaccinated = False):
         
-        """Compute the conditional marginals $pi_{i\j}(t)$ for all nodes i, j at time t.
+        """Compute the conditional marginals $pi_{i / j}(t)$ for all nodes i, j at time t.
         """
 
         ###### initialization ######
@@ -238,7 +238,7 @@ class NeighborhoodMessagePassing:
                 self.extend_state(100)
                 self.state_size += 100
 
-            # compute conditional marginals pi_i\j(t) for all needed values
+            # compute conditional marginals pi_{i/j}(t) for all needed values
             for i in self.state.keys():
                 for j in self.state[i].keys():
                     nb_i_j = self.neighborhoods_i_except_j[i][j]
@@ -258,7 +258,7 @@ class NeighborhoodMessagePassing:
 
 def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_prob, temporal = False, track_vaccinated = False):
     
-    """Compute the conditional marginal pi_i\j(t) for node i from precomputed neighborhood samples."""
+    """Compute the conditional marginal pi_{i/j}(t) for node i from precomputed neighborhood samples."""
 
     # compute \sum_{\gamma} p(i infected | \gamma) p(\gamma)
     prob_i_infected = 0
