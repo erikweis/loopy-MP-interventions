@@ -39,10 +39,7 @@ class Neighborhood:
         filtered_edges = []
         for edge in self.edges:
             if i in edge: # edge is incident on node i
-                if edge[0] == i:
-                    k = edge[1]
-                elif edge[1] == i:
-                    k = edge[0]
+                k = edge[1] if edge[0] == i else edge[0]
                 self.neighbors_i.append(k)
                 # add r=0 edges to the list
                 if not filter_r0_edges:
