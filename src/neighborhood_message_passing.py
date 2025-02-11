@@ -8,6 +8,8 @@ from src.neighborhood import Neighborhood, sample_gamma
 from src.percolation import percolation_MC, NeighborhoodObservable
 
 
+INIT_STATE_SIZE = 100
+
 def construct_neighborhoods_edgelists(g, r, v = None):
     """Construct neighborhoods for each node in the graph
     by calculating a list of primitive cycles. By default,
@@ -57,12 +59,13 @@ class NeighborhoodMessagePassing:
         v (np.array): The vaccination status of each node, $v_i = 1$ if node i is vaccinated.
         M (int): The number of samples to draw from each neighborhood for the marginal calculations.
         verbose (bool): Whether to print progress information.
-        temporal (bool): Whether to correct for time to infection within neighborhoods. Slower but needed for sentinel surveillance.
+        temporal (bool): Whether to correct for time to infection within neighborhoods. 
+            Slower but needed for sentinel surveillance.
     """
 
     def __init__(self, g, r, infection_prob, t_max, 
                  v = None, M=10, verbose = False, temporal = False):
-        
+
         # basic configs
         self.verbose = verbose
         self.temporal = temporal
@@ -72,7 +75,7 @@ class NeighborhoodMessagePassing:
         # save graph information
         self.N = len(g.nodes)
         self.adjlist = [list(g.neighbors(i)) for i in range(len(g))]
-        
+
         # set vaccination for each node
         if v is None:
             self.v = np.zeros(self.N)
@@ -95,12 +98,12 @@ class NeighborhoodMessagePassing:
         self.sample_neighborhoods_i_except_j(M)
 
         # initialize state
-        self.state = self.empty_state(100)
-        self.state_size = 100
-        
+        self.state = self.empty_state(INIT_STATE_SIZE)
+        self.state_size = INIT_STATE_SIZE
+
         # initialize marginals
         self.marginals = None
-        
+
     def construct_neighborhoods_i_except_j(self):
         """Construct all neighborhoods for N_i excluding N_j."""
         if self.verbose:
@@ -137,7 +140,7 @@ class NeighborhoodMessagePassing:
         else:
             for i in range(self.N):
                 sample_gamma(self.neighborhoods[i], M, self.infection_prob, v=self.v, temporal=self.temporal)
-                
+
     def sample_neighborhoods_i_except_j(self, M):
         """
         Sample neighborhoods for N_i excluding N_j.
@@ -185,7 +188,7 @@ class NeighborhoodMessagePassing:
         state = self.state
         for i, state_i in state.items():
             for j in state_i.keys():
-                state[j][i].extend([0]*size)
+                state[j][i].extend([0] * size)
         self.state_size += size
 
 
@@ -204,7 +207,7 @@ class NeighborhoodMessagePassing:
         """Reset the state, such that pi_{i/j}(t)=0 for all i,j,t."""
         for i, state_i in self.state.items():
             for j in state_i.keys():
-                self.state[i][j] = [0]*100
+                self.state[i][j] = [0] * INIT_STATE_SIZE
 
     def compute_marginals(self, s, convergence_time, track_vaccinated = False):
         """Compute the marginals pi_i(t) for all nodes i at time t."""
@@ -256,12 +259,12 @@ class NeighborhoodMessagePassing:
 
         if self.verbose:
             pbar = tqdm(total=self.t_max-1, desc="Message passing iterations")
-            
+
         for t in range(1, self.t_max):
             # extend state size if necessary
             if self.state_size <= t:
-                self.extend_state(100)
-                self.state_size += 100
+                self.extend_state(INIT_STATE_SIZE)
+                self.state_size += INIT_STATE_SIZE
 
             # compute conditional marginals
             for i, state_i in self.state.items():
@@ -274,7 +277,7 @@ class NeighborhoodMessagePassing:
 
             if self.verbose:
                 pbar.update(1)
-                
+
             # check for convergence
             if self.convergence_check(t, threshold=convergence_threshold):
                 if self.verbose:
@@ -285,7 +288,7 @@ class NeighborhoodMessagePassing:
 
         if self.verbose:
             pbar.close()
-            
+
         self.compute_marginals(s, self.t_max, track_vaccinated=track_vaccinated)
         raise RuntimeError(f"Message passing did not converge in {self.t_max} time steps.")
 
@@ -303,5 +306,5 @@ def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_prob
     # set state to zero if node is vaccinated
     if not track_vaccinated:
         prob_i_infected *= (1 - v[i])
-    
+
     return prob_i_infected
