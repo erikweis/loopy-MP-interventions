@@ -108,33 +108,28 @@ def sample_gamma(nb, M, infection_prob, v = None, force=False, temporal = False)
     # check if Gamma samples already exist
     if len(nb.Gamma_samples) > 0 and not force:
         raise ValueError("Gamma samples already exist. Use force=True to overwrite.")
-    else:
-        nb.Gamma_samples = []
-
-    if temporal: # if using temporal, sample with SIR process
+    # clear the Gamma samples and generate new samples
+    nb.Gamma_samples = []
+    if temporal:
         _sample_neighborhood_temporal(nb, M, infection_prob, v = v)
-        return
-
-    else: # sample using atemporal Newman-Ziff algorithm
-        # if the neighborhood has no edges, then only one percolation outcome is possible
+    else:
         if len(nb.edges) == 0:
-            #add null sample if it's probability is nonzero
             if infection_prob > 0:
+                # if the neighborhood has no edges, then only one percolation outcome
+                # is possible, so we add a null sample if it's probability is nonzero
                 s = _get_null_sample(nb, infection_prob, temporal = temporal)
                 nb.Gamma_samples.append(s)
-            return # up to one sample added
-
-        # sample the neighborhood
-        _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = v)
-
-        # add sample for the case where no edges appear in percolation process
-        if infection_prob > 0:
-            s = _get_null_sample(nb, infection_prob, temporal = temporal)
-            nb.Gamma_samples.append(s)
+        else:
+            _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = v)
+            if infection_prob > 0:
+                # add sample for the case where no edges appear in percolation process
+                s = _get_null_sample(nb, infection_prob, temporal = temporal)
+                nb.Gamma_samples.append(s)
 
 
 def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
-    """"Perform monte carlo sampling of the neighborhood percolation process
+    """"
+    Perform monte carlo sampling of the neighborhood percolation process
     using discrete-time SIR dynamics.
     """
     # create a graph of the neighborhood
@@ -144,7 +139,6 @@ def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
         g.add_edge(nb.i,k)
     if len(g) == 0:
         return
-
     # run the SIR process for M iterations
     seeds = [nb.i]
     for _ in range(M):
@@ -167,8 +161,10 @@ def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
 
 
 def _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = None):
-    """"Perform monte carlo sampling of the neighborhood percolation process
-    using the Newman-Ziff algorithm."""
+    """"
+    Perform monte carlo sampling of the neighborhood percolation process
+    using the Newman-Ziff algorithm.
+    """
     # create a neighborhood observable object to store the outcomes of the process
     NO = NeighborhoodObservable(nb.i, nb.neighbors_i, nb.nodes, nb.edges, infection_prob, v=v)
     # create a union-find structure for Newman-Ziff
