@@ -1,14 +1,15 @@
 import random
-import numpy as np
 from collections import defaultdict
 from scipy.stats import binom
 from src.gamma_sample import GammaSample
+
 
 def find(x, i):
     if x[i] < 0:
         return i
     x[i] = find(x, x[i])
     return x[i]
+
 
 def percolation_MC(edgelist, x, NO, m_max):
     """Perform a Monte Carlo percolation process on the edgelist
