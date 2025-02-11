@@ -57,6 +57,7 @@ class NeighborhoodMessagePassing:
         v (np.array): The vaccination status of each node, $v_i = 1$ if node i is vaccinated.
         M (int): The number of samples to draw from each neighborhood for the marginal calculations.
         verbose (bool): Whether to print progress information.
+        temporal (bool): Whether to correct for time to infection within neighborhoods. Slower but needed for sentinel surveillance.
     """
 
     def __init__(self, g, r, infection_prob, t_max, 
