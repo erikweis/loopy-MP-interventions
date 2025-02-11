@@ -11,15 +11,12 @@ def simulate_discrete_SI_temporal(g, p, seeds, t_max = 100):
         t_max: int, maximum number of time steps process, default = 100   
     """
     I = {i:-1 for i in g.nodes()}
-
     current_infected_nodes = list(seeds)
     next_infected_nodes = set()
-
     for t in range(0, t_max):   
         #infect nodes that are newly infected at time t
         for node in current_infected_nodes:
             I[node] = t
-        
         # determine next infected nodes
         next_infected_nodes.clear()
         for i in current_infected_nodes:
@@ -27,7 +24,6 @@ def simulate_discrete_SI_temporal(g, p, seeds, t_max = 100):
                 if I[j] < 0 and np.random.random() < p:
                     next_infected_nodes.add(j)
                     I[j] = t
-        
         if not next_infected_nodes:
             break
         current_infected_nodes = list(next_infected_nodes) 
@@ -61,14 +57,12 @@ def simulate_discrete_SI(g, p, seeds, v, marginals, sentinels = None, return_t_f
             if not v[node] and np.random.random() < 1/len(g):
                 seeds.append(node)
     I = np.zeros(max(g.nodes())+1, dtype=bool)
-
     # initialize all seeds as infected
     for seed in seeds:
         I[seed] = True
-
     current_infected_nodes = list(seeds)
+    # SI simulation
     next_infected_nodes = set()
-
     t_max = marginals.shape[1]
     for t in range(t_max):
         # infect nodes that are newly infected at time t
@@ -77,7 +71,6 @@ def simulate_discrete_SI(g, p, seeds, v, marginals, sentinels = None, return_t_f
             # if sentinels are passed, return the time that the first one is reached
             if sentinels is not None and node in sentinels:
                 return t
-        
         # determine next infected nodes
         next_infected_nodes.clear()
         for i in current_infected_nodes:
@@ -90,7 +83,6 @@ def simulate_discrete_SI(g, p, seeds, v, marginals, sentinels = None, return_t_f
                 elif not I[j] and np.random.random() < p:
                     next_infected_nodes.add(j)
                     I[j] = True
-        
         if not next_infected_nodes:
             break
         current_infected_nodes = list(next_infected_nodes)
@@ -136,5 +128,4 @@ def get_marginals_sentinel(g, p, sentinels, num_samples = 10000, t_max = 15, inc
         t = simulate_discrete_SI(g, p, seeds, v, marginals, sentinels, return_t_final=include_null)
         if t is not None:
             sentinel_marginals[t:] += 1
-    
     return sentinel_marginals / num_samples

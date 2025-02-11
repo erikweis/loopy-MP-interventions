@@ -20,7 +20,6 @@ def construct_neighborhoods_edgelists(g, r, v = None):
     Returns:
         A list of lists, where each list contains the edges
     """
-
     neighborhoods = [[] for _ in range(len(g.nodes))]
     limited_cycles = list(nx.simple_cycles(g, length_bound = r + 2))
     # add cycles of length 2
@@ -289,7 +288,8 @@ class NeighborhoodMessagePassing:
         raise RuntimeError(f"Message passing did not converge in {self.t_max} time steps.")
 
 
-def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_prob, temporal = False, track_vaccinated = False):
+def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_prob,
+                                    temporal = False, track_vaccinated = False):
     """Compute the conditional marginal pi_{i/j}(t) for node i from precomputed neighborhood samples."""
     # compute \sum_{\gamma} p(i infected | \gamma) p(\gamma)
     prob_i_infected = 0

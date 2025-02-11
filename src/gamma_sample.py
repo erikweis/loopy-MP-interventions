@@ -51,9 +51,7 @@ class TemporalGammaSample():
         self.prob = prob
 
     def __repr__(self):
-        return f"""TemporalGammaSample(
-    reachable_nodes={self.reachable_nodes}, 
-    distances={self.distances})"""
+        return f"""TemporalGammaSample(reachable_nodes={self.reachable_nodes}, distances={self.distances})"""
 
     def __eq__(self, other):
         return self.reachable_nodes == other.reachable_nodes and \

@@ -79,7 +79,7 @@ class Neighborhood:
             if i in edge:
                 reachable_edges.append(edge)
                 reachable_nodes.update(edge)
-        
+
         finished = False
         while not finished:
             finished = True
@@ -88,7 +88,7 @@ class Neighborhood:
                     reachable_edges.append(edge)
                     reachable_nodes.update(edge)
                     finished = False
-        
+
         return list(reachable_nodes), reachable_edges
 
 
@@ -200,7 +200,7 @@ def _get_null_sample(nb, infection_prob, temporal = False):
             [1]*len(nb.neighbors_i),
             prob = binom.pmf(0,len(nb.edges),infection_prob)
         )
-        
+
 
 def consolidate_samples(samples, min_prob_threshold = 10**-10):
     """Consolidate neighborhood percolation samples with the same reachable nodes
