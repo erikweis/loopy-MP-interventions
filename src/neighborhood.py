@@ -76,7 +76,6 @@ class Neighborhood:
             if i in edge:
                 reachable_edges.append(edge)
                 reachable_nodes.update(edge)
-
         finished = False
         while not finished:
             finished = True
@@ -85,7 +84,6 @@ class Neighborhood:
                     reachable_edges.append(edge)
                     reachable_nodes.update(edge)
                     finished = False
-
         return list(reachable_nodes), reachable_edges
 
 
@@ -111,16 +109,16 @@ def sample_gamma(nb, M, infection_prob, v = None, force=False, temporal = False)
     # clear the Gamma samples and generate new samples
     nb.Gamma_samples = []
     if temporal:
-        _sample_neighborhood_temporal(nb, M, infection_prob, v = v)
+        _sample_neighborhood_temporal(nb, M, infection_prob, v=v)
     else:
         if len(nb.edges) == 0:
             if infection_prob > 0:
                 # if the neighborhood has no edges, then only one percolation outcome
                 # is possible, so we add a null sample if it's probability is nonzero
-                s = _get_null_sample(nb, infection_prob, temporal = temporal)
+                s = _get_null_sample(nb, infection_prob, temporal=temporal)
                 nb.Gamma_samples.append(s)
         else:
-            _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = v)
+            _sample_neighborhood_newman_ziff(nb, M, infection_prob, v=v)
             if infection_prob > 0:
                 # add sample for the case where no edges appear in percolation process
                 s = _get_null_sample(nb, infection_prob, temporal = temporal)
@@ -136,7 +134,7 @@ def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
     g = nx.Graph()
     g.add_edges_from(nb.edges)
     for k in nb.neighbors_i:
-        g.add_edge(nb.i,k)
+        g.add_edge(nb.i, k)
     if len(g) == 0:
         return
     # run the SIR process for M iterations
@@ -155,7 +153,6 @@ def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
             prob = 1/M
         )
         nb.Gamma_samples.append(s)
-
     # add samples with appreciable probability to the sample list
     nb.Gamma_samples = consolidate_samples(nb.Gamma_samples)
 
@@ -185,8 +182,10 @@ def _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = None):
 
 
 def _get_null_sample(nb, infection_prob, temporal = False):
-    """"Return a GammaSample object, where no edges were retained
-    in the percolation process."""
+    """"
+    Return a GammaSample object, where no edges were retained
+    in the percolation process.
+    """
     assert temporal == False
     return GammaSample(
             [[k] for k in nb.neighbors_i],
@@ -196,7 +195,8 @@ def _get_null_sample(nb, infection_prob, temporal = False):
 
 
 def consolidate_samples(samples, min_prob_threshold = 10**-10):
-    """Consolidate neighborhood percolation samples with the same reachable nodes
+    """
+    Consolidate neighborhood percolation samples with the same reachable nodes
     and combine their probabilities.
     """
     # use a hash function to consolidate samples
@@ -206,15 +206,14 @@ def consolidate_samples(samples, min_prob_threshold = 10**-10):
             out_samples[s].prob += s.prob
         else:
             out_samples[s] = s
-
     # filter samples with low probability / no reachable nodes
     out_samples = filter_samples(out_samples, min_prob_threshold)
-
     return out_samples
 
 
 def filter_samples(samples, min_prob_threshold = 10**-5):
-    """Filter samples with probability below a threshold.
+    """
+    Filter samples with probability below a threshold.
     This is a computational efficiency measure to reduce the number
     of samples with negligible probability.
     """

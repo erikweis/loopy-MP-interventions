@@ -34,8 +34,9 @@ def percolation_MC(edgelist, x, NO, m_max):
 
 
 class NeighborhoodObservable():
-    """Class to store the observable outcomes of interest for the 
-    neighborhood percolation process. 
+    """
+    Class to store the observable outcomes of interest for the 
+    neighborhood percolation process.
 
     We remove node $i$ from the list of nodes and edges, because
     we want to keep track of clusters of nodes that are not
@@ -52,11 +53,9 @@ class NeighborhoodObservable():
         self.edgelist = []
         for j,k in edgelist:
             if v is not None: # exclude vaccinated nodes
-                if v[j] == 1 or v[k] == 1: 
-                    #print(f"excluding ({j},{k}) because v[j]:{v[j]} or v[k]:{v[k]} is 1")
+                if v[j] == 1 or v[k] == 1:
                     continue
             if i in (j,k):
-                #print(f"excluding ({j},{k}) because i:{i} is in ({j},{k})")
                 continue
             self.edgelist.append((nodes.index(j), nodes.index(k)))               
         # not re-indexed
