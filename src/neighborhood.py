@@ -1,13 +1,12 @@
+import numpy as np
+from scipy.stats import binom
+import networkx as nx
 from src.percolation import percolation_MC, NeighborhoodObservable
 from src.simulation import simulate_discrete_SI_temporal
 from src.gamma_sample import GammaSample, TemporalGammaSample
-import numpy as np
-from scipy.stats import binom
-import pytest
-import networkx as nx
+
 
 class Neighborhood:
-
     """
     A class to represent the neighborhood of a node i in a graph.
 
@@ -30,7 +29,6 @@ class Neighborhood:
     """
 
     def __init__(self, edges, i, filter_r0_edges = True):
-
         self.i = i
         self.nodes, self.edges = self.get_reachable_nodes_edges(edges, i)
         self.Gamma_samples = []
@@ -55,7 +53,6 @@ class Neighborhood:
         self.edges = filtered_edges
         assert len(set(self.neighbors_i)) == len(self.neighbors_i)
 
-
     def __repr__(self):
         return f"""Neighborhood(
     i={self.i},
@@ -64,11 +61,9 @@ class Neighborhood:
     neighbors_i={self.neighbors_i},
     Gamma_samples={self.Gamma_samples}
 )"""
-        
 
     @staticmethod
     def get_reachable_nodes_edges(edgelist, i):
-
         """From the edgelist passed, return the nodes and edges
         that are reachable from node i. Perform a DFS search.
 
@@ -78,7 +73,6 @@ class Neighborhood:
             reachable_edges : list
                 The edges reachable from node i.
         """
-
         reachable_edges = []
         reachable_nodes = set()
         for edge in edgelist:
@@ -99,7 +93,6 @@ class Neighborhood:
 
 
 def sample_gamma(nb, M, infection_prob, v = None, force=False, temporal = False):
-
     """Sample the neighborhood of a node i with a percolation process.
     
     Parameters
@@ -115,7 +108,6 @@ def sample_gamma(nb, M, infection_prob, v = None, force=False, temporal = False)
     force : bool, optional
         If True, overwrite the Gamma samples if they already exist.
     """
-    
     # check if Gamma samples already exist
     if len(nb.Gamma_samples) > 0 and not force:
         raise ValueError("Gamma samples already exist. Use force=True to overwrite.")
@@ -127,7 +119,6 @@ def sample_gamma(nb, M, infection_prob, v = None, force=False, temporal = False)
         return
 
     else: # sample using atemporal Newman-Ziff algorithm
-        
         # if the neighborhood has no edges, then only one percolation outcome is possible
         if len(nb.edges) == 0:
             #add null sample if it's probability is nonzero
@@ -146,11 +137,9 @@ def sample_gamma(nb, M, infection_prob, v = None, force=False, temporal = False)
 
 
 def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
-
     """"Perform monte carlo sampling of the neighborhood percolation process
     using discrete-time SIR dynamics.
     """
-
     # create a graph of the neighborhood
     g = nx.Graph()
     g.add_edges_from(nb.edges)
@@ -158,12 +147,11 @@ def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
         g.add_edge(nb.i,k)
     if len(g) == 0:
         return
-    
+
     # run the SIR process for M iterations
     seeds = [nb.i]
     for _ in range(M):
         I = simulate_discrete_SI_temporal(g, infection_prob, seeds, t_max = 20)
-        
         reachable_nodes, distances = [],[]
         for node, distance in I.items():
             if distance >= 0 and node != nb.i:
@@ -182,13 +170,10 @@ def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
 
 
 def _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = None):
-
     """"Perform monte carlo sampling of the neighborhood percolation process
     using the Newman-Ziff algorithm."""
-    
     # create a neighborhood observable object to store the outcomes of the process
     NO = NeighborhoodObservable(nb.i, nb.neighbors_i, nb.nodes, nb.edges, infection_prob, v=v)
-    
     # create a union-find structure for Newman-Ziff
     x = np.zeros(
         len(nb.nodes)-1, # exclude i in union-find structure
@@ -196,24 +181,19 @@ def _sample_neighborhood_newman_ziff(nb, M, infection_prob, v = None):
     ) - 1
     # set the max number of edges to add
     m_max = len(NO.edgelist)
-
     # perform percolation sampling
     for _ in range(M):
         percolation_MC(NO.edgelist, x, NO, m_max)
-    
     # add samples with appreciable probability to the sample list
     nb.Gamma_samples = consolidate_samples(NO.samples)
-
     # adjust probabilities to account for the number of samples, M
     for sample in nb.Gamma_samples:
         sample.prob = sample.prob / M
 
 
 def _get_null_sample(nb, infection_prob, temporal = False):
-
     """"Return a GammaSample object, where no edges were retained
     in the percolation process."""
-
     assert temporal == False
     return GammaSample(
             [[k] for k in nb.neighbors_i],
@@ -223,11 +203,9 @@ def _get_null_sample(nb, infection_prob, temporal = False):
         
 
 def consolidate_samples(samples, min_prob_threshold = 10**-10):
-
     """Consolidate neighborhood percolation samples with the same reachable nodes
     and combine their probabilities.
     """
-
     # use a hash function to consolidate samples
     out_samples = dict()
     for s in samples:
@@ -247,5 +225,4 @@ def filter_samples(samples, min_prob_threshold = 10**-5):
     This is a computational efficiency measure to reduce the number
     of samples with negligible probability.
     """
-
     return [s for s in samples if s.prob > min_prob_threshold]

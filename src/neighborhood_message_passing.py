@@ -1,11 +1,9 @@
+from collections import defaultdict
 import networkx as nx
 import numpy as np
-from collections import defaultdict
-from itertools import combinations
 from tqdm import tqdm
-from src.gamma_sample import GammaSample, _prob_i_infected_given_gamma
+from src.gamma_sample import _prob_i_infected_given_gamma
 from src.neighborhood import Neighborhood, sample_gamma
-from src.percolation import percolation_MC, NeighborhoodObservable
 
 
 INIT_STATE_SIZE = 100
@@ -42,7 +40,6 @@ def construct_neighborhoods_edgelists(g, r, v = None):
             for i in cycle:
                 if edge not in neighborhoods[i]:
                     neighborhoods[i].append(edge)
-    
     return neighborhoods
 
 
@@ -87,7 +84,7 @@ class NeighborhoodMessagePassing:
         neighborhood_edgelists = construct_neighborhoods_edgelists(g, r)
         self.neighborhood_edgelists = neighborhood_edgelists
         # construct neighborhoods
-        self.neighborhoods = [Neighborhood(edges, i, filter_r0_edges=(not temporal)) \
+        self.neighborhoods = [Neighborhood(edges, i, filter_r0_edges=not temporal) \
                               for i, edges in enumerate(neighborhood_edgelists)]
         # construct conditional neighborhoods
         self.neighborhoods_i_except_j = [dict() for _ in range(self.N)]
@@ -178,7 +175,6 @@ class NeighborhoodMessagePassing:
             for j in nb.nodes:
                 if i != j:
                     state[i][j] = [0]*size
-            
             state[i] = dict(state[i])
         state=dict(state)
         return state
@@ -271,7 +267,7 @@ class NeighborhoodMessagePassing:
                 for j in state_i.keys():
                     nb_i_j = self.neighborhoods_i_except_j[i][j]
                     self.state[i][j][t] = _calculate_conditional_marginal(
-                        self.state, i, j, nb_i_j, t, s, v, self.infection_prob, 
+                        self.state, i, j, nb_i_j, t, s, v, self.infection_prob,
                         temporal=self.temporal, track_vaccinated=track_vaccinated
                     )
 

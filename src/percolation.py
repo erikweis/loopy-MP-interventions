@@ -1,6 +1,6 @@
+import random
 import numpy as np
 from collections import defaultdict
-import random
 from scipy.stats import binom
 from src.gamma_sample import GammaSample
 
@@ -10,25 +10,17 @@ def find(x, i):
     x[i] = find(x, x[i])
     return x[i]
 
-
 def percolation_MC(edgelist, x, NO, m_max):
-
     """Perform a Monte Carlo percolation process on the edgelist
     using the Newman-Ziff algorithm."""
-
     # reset data structures
     x.fill(-1)
-
     # shuffle percolation order
     random.shuffle(edgelist)
-
     for idx, m in enumerate(range(1,m_max+1)):
-
         i, j = edgelist[idx]
-
         r_i = find(x, i)
         r_j = find(x, j)
-
         if r_i != r_j:
             if x[r_i] < x[r_j]:  # size of i is greater than j
                 x[r_i] += x[r_j]  # size of i grows by the size of j
@@ -36,13 +28,11 @@ def percolation_MC(edgelist, x, NO, m_max):
             else:  # size of i is less than j
                 x[r_j] += x[r_i]  # size of j grows by the size of i
                 x[r_i] = r_j  # assign all i's to group of j
-
         # check all qualities of interest
         calculate_observables(m, NO, x)
 
 
 class NeighborhoodObservable():
-
     """Class to store the observable outcomes of interest for the 
     neighborhood percolation process. 
 
@@ -91,24 +81,19 @@ def is_reachable(i, j, x):
 
 
 def calculate_observables(m, NO, x):
-
     """Given a current percolation instance, calculate the observables
     of interest. In this case, we save the 
     """
-    
     i = NO.i
     node_map = NO.node_map
-    
     # calcualte probability of percolation outcome
     prob = binom.pmf(m, len(NO.edgelist), NO.infection_prob)
     if prob == 0:
         return
-    
     # find all subsets of nodes at are connected in the percolation instance
     cluster2nodes = defaultdict(list)
     for idx in range(len(x)):
         cluster2nodes[find(x, idx)].append(node_map[idx])
- 
     # for each cluster, find the number of neighbors(i) in the cluster    
     clusters = []
     num_neighbors = []
@@ -122,8 +107,4 @@ def calculate_observables(m, NO, x):
         # save the cluster and the number of neighbors in the cluster
         clusters.append(nodes)
         num_neighbors.append(num_reachable_neighbors)
-
-
     NO.samples.append(GammaSample(clusters, num_neighbors, prob))
-
-
