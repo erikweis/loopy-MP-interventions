@@ -1,7 +1,7 @@
 import numpy as np
 
-class GammaSample:
 
+class GammaSample:
     """Class to store the outcome of a percolation process on a neighborhood.
     
     Attributes
@@ -32,8 +32,8 @@ class GammaSample:
     def __hash__(self):
         return hash((tuple(tuple(c) for c in self.reachable_nodes), tuple(self.num_neighbors)))
 
-class TemporalGammaSample():
 
+class TemporalGammaSample():
     """Class to store the outcome of a percolation process on a neighborhood,
     as well as the distance of each node from node i.
     
@@ -51,9 +51,7 @@ class TemporalGammaSample():
         self.prob = prob
 
     def __repr__(self):
-        return f"""TemporalGammaSample(
-    reachable_nodes={self.reachable_nodes}, 
-    distances={self.distances})"""
+        return f"""TemporalGammaSample(reachable_nodes={self.reachable_nodes}, distances={self.distances})"""
 
     def __eq__(self, other):
         return self.reachable_nodes == other.reachable_nodes and \
@@ -64,7 +62,6 @@ class TemporalGammaSample():
 
 
 def _prob_i_infected_given_gamma(state, i, t, infection_prob, sample, s, temporal = False):
-
     """Calcualte the probability that node i is infected at time t,
     given a percolation sample.
 
@@ -75,9 +72,7 @@ def _prob_i_infected_given_gamma(state, i, t, infection_prob, sample, s, tempora
     Returns:
         prob_i_infected_given_gamma : float
             The probability that node i is infected at time t, given the percolation sample.
-    """
-
-    
+    """    
     if temporal:
         return 1 - np.prod([(1 - state[k][i][t-d]) for k, d in \
                                        zip(sample.reachable_nodes, sample.distances)])

@@ -1,8 +1,8 @@
-import numpy as np
-from collections import defaultdict
 import random
+from collections import defaultdict
 from scipy.stats import binom
 from src.gamma_sample import GammaSample
+
 
 def find(x, i):
     if x[i] < 0:
@@ -12,23 +12,16 @@ def find(x, i):
 
 
 def percolation_MC(edgelist, x, NO, m_max):
-
     """Perform a Monte Carlo percolation process on the edgelist
     using the Newman-Ziff algorithm."""
-
     # reset data structures
     x.fill(-1)
-
     # shuffle percolation order
     random.shuffle(edgelist)
-
     for idx, m in enumerate(range(1,m_max+1)):
-
         i, j = edgelist[idx]
-
         r_i = find(x, i)
         r_j = find(x, j)
-
         if r_i != r_j:
             if x[r_i] < x[r_j]:  # size of i is greater than j
                 x[r_i] += x[r_j]  # size of i grows by the size of j
@@ -36,15 +29,14 @@ def percolation_MC(edgelist, x, NO, m_max):
             else:  # size of i is less than j
                 x[r_j] += x[r_i]  # size of j grows by the size of i
                 x[r_i] = r_j  # assign all i's to group of j
-
         # check all qualities of interest
         calculate_observables(m, NO, x)
 
 
 class NeighborhoodObservable():
-
-    """Class to store the observable outcomes of interest for the 
-    neighborhood percolation process. 
+    """
+    Class to store the observable outcomes of interest for the 
+    neighborhood percolation process.
 
     We remove node $i$ from the list of nodes and edges, because
     we want to keep track of clusters of nodes that are not
@@ -52,7 +44,6 @@ class NeighborhoodObservable():
     """
 
     def __init__(self, i, neighbors_i, nodes, edgelist, infection_prob, v=None):
-        
         self.i = i 
         #remove i from nodes
         nodes = [n for n in nodes if n != i]
@@ -62,16 +53,14 @@ class NeighborhoodObservable():
         self.edgelist = []
         for j,k in edgelist:
             if v is not None: # exclude vaccinated nodes
-                if v[j] == 1 or v[k] == 1: 
-                    #print(f"excluding ({j},{k}) because v[j]:{v[j]} or v[k]:{v[k]} is 1")
+                if v[j] == 1 or v[k] == 1:
                     continue
             if i in (j,k):
-                #print(f"excluding ({j},{k}) because i:{i} is in ({j},{k})")
                 continue
             self.edgelist.append((nodes.index(j), nodes.index(k)))               
         # not re-indexed
         self.neighbors_i = neighbors_i
-        
+
         self.samples = []
         self.infection_prob = infection_prob
 
@@ -91,24 +80,19 @@ def is_reachable(i, j, x):
 
 
 def calculate_observables(m, NO, x):
-
     """Given a current percolation instance, calculate the observables
     of interest. In this case, we save the 
     """
-    
     i = NO.i
     node_map = NO.node_map
-    
-    # calcualte probability of percolation outcome
+    # calculate probability of percolation outcome
     prob = binom.pmf(m, len(NO.edgelist), NO.infection_prob)
     if prob == 0:
         return
-    
     # find all subsets of nodes at are connected in the percolation instance
     cluster2nodes = defaultdict(list)
     for idx in range(len(x)):
         cluster2nodes[find(x, idx)].append(node_map[idx])
- 
     # for each cluster, find the number of neighbors(i) in the cluster    
     clusters = []
     num_neighbors = []
@@ -122,8 +106,4 @@ def calculate_observables(m, NO, x):
         # save the cluster and the number of neighbors in the cluster
         clusters.append(nodes)
         num_neighbors.append(num_reachable_neighbors)
-
-
     NO.samples.append(GammaSample(clusters, num_neighbors, prob))
-
-
