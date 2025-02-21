@@ -28,11 +28,6 @@ def construct_neighborhoods_edgelists(g, r, v = None):
     # construct neighborhoods by adding the cycle to each nodes neighborhood on the cycle
     for cycle in limited_cycles:
 
-        # check if the cycle contains a node that is vaccinated
-        if v is not None:
-            if any([v[i] == 1 for i in cycle]):
-                continue
-
         l = len(cycle)
         for idx in range(l):
             edge = tuple(sorted([cycle[idx], cycle[(idx + 1) % l]]))
@@ -217,7 +212,7 @@ class NeighborhoodMessagePassing:
                 # compute pi_i(t)
                 for sample in nb_i.Gamma_samples:
                     marginals[i,t] += _prob_i_infected_given_gamma(
-                        self.state, i, t, self.infection_prob, sample, s, temporal = self.temporal
+                        self.state, i, t, self.infection_prob, sample, temporal = self.temporal
                     ) * sample.prob
                 marginals[i, t] = (s[i] + (1 - s[i]) * (marginals[i, t]))
                 # if track_vaccinated, marginals for vaccinated nodes are not set to zero
@@ -266,7 +261,7 @@ class NeighborhoodMessagePassing:
                 for j in state_i.keys():
                     nb_i_j = self.neighborhoods_i_except_j[i][j]
                     self.state[i][j][t] = _calculate_conditional_marginal(
-                        self.state, i, j, nb_i_j, t, s, v, self.infection_prob,
+                        self.state, i, nb_i_j, t, s, v, self.infection_prob,
                         temporal=self.temporal, track_vaccinated=track_vaccinated
                     )
 
@@ -288,14 +283,14 @@ class NeighborhoodMessagePassing:
         raise RuntimeError(f"Message passing did not converge in {self.t_max} time steps.")
 
 
-def _calculate_conditional_marginal(state, i, j, nb_i_j, t, s, v, infection_prob,
+def _calculate_conditional_marginal(state, i, nb_i_j, t, s, v, infection_prob,
                                     temporal = False, track_vaccinated = False):
     """Compute the conditional marginal pi_{i/j}(t) for node i from precomputed neighborhood samples."""
     # compute \sum_{\gamma} p(i infected | \gamma) p(\gamma)
     prob_i_infected = 0
     for sample in nb_i_j.Gamma_samples:
         prob_i_infected += _prob_i_infected_given_gamma(
-            state, i, t, infection_prob, sample, s, temporal = temporal
+            state, i, t, infection_prob, sample, temporal = temporal
         ) * sample.prob
     # add seed status to the conditional marginal
     prob_i_infected = s[i] + (1 - s[i]) * prob_i_infected

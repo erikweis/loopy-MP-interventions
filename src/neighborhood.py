@@ -132,13 +132,16 @@ def _sample_neighborhood_temporal(nb, M, infection_prob, v = None):
     """
     # create a graph of the neighborhood
     g = nx.Graph()
-    g.add_edges_from(nb.edges)
+    # remove vaccinated nodes
+    edges = [e for e in nb.edges if (v[e[0]] != 1 and v[e[1]] != 1)]
+    g.add_edges_from(edges)
     for k in nb.neighbors_i:
-        g.add_edge(nb.i, k)
+        if v[k] == 0: # only add unvaccinated neighbors
+            g.add_edge(nb.i, k)
     if len(g) == 0:
         return
     # run the SIR process for M iterations
-    seeds = [nb.i]
+    seeds = [nb.i] if v[nb.i] == 0 else []
     for _ in range(M):
         I = simulate_discrete_SI_temporal(g, infection_prob, seeds, t_max = 20)
         reachable_nodes, distances = [],[]

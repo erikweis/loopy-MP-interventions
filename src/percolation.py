@@ -83,7 +83,6 @@ def calculate_observables(m, NO, x):
     """Given a current percolation instance, calculate the observables
     of interest. In this case, we save the 
     """
-    i = NO.i
     node_map = NO.node_map
     # calculate probability of percolation outcome
     prob = binom.pmf(m, len(NO.edgelist), NO.infection_prob)

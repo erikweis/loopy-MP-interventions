@@ -61,8 +61,8 @@ class TemporalGammaSample():
         return hash((tuple(self.reachable_nodes), tuple(self.distances)))
 
 
-def _prob_i_infected_given_gamma(state, i, t, infection_prob, sample, s, temporal = False):
-    """Calcualte the probability that node i is infected at time t,
+def _prob_i_infected_given_gamma(state, i, t, infection_prob, sample, temporal = False):
+    """Calculate the probability that node i is infected at time t,
     given a percolation sample.
 
     For each cluster, compute the probability each cluster doesn't
@@ -74,7 +74,7 @@ def _prob_i_infected_given_gamma(state, i, t, infection_prob, sample, s, tempora
             The probability that node i is infected at time t, given the percolation sample.
     """    
     if temporal:
-        return 1 - np.prod([(1 - state[k][i][t-d]) for k, d in \
+        return 1 - np.prod([(1 - state[k][i][max(t-d,0)]) for k, d in \
                                        zip(sample.reachable_nodes, sample.distances)])
     else:
         prob_no_cluster_infects_i = 1
